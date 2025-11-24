@@ -1,16 +1,11 @@
-PRY_POST_MICROSERVICIO
+# 2. Microservicio de Post (PRY_POST_MICROSERVICIO)
+Estudiantes : 
+* Betty Rodriguez
+* Victor Villamarin
 
 Microservicio de Posts (Laravel) — gestión CRUD de publicaciones protegida por validación de tokens proporcionada por un microservicio de autenticación externo.
 
-## Resumen
 
-Este repositorio contiene el microservicio de Posts. Requisitos principales:
-
-- Laravel app (código ya incluido)
-- Base de datos PostgreSQL (configurable vía `.env`)
-- Un microservicio de Autenticación externo que expone `/api/validate-token` y devuelve JSON con `{ "user": { "id": ..., ... } }` para tokens válidos.
-
-El middleware `app/Http/Middleware/CheckAuthToken.php` valida el Bearer token llamando al servicio de autenticación (configurable con `AUTH_SERVICE_URL`) y inyecta en la request el objeto `auth_user` y `user_id` (por lo tanto, el cliente NO debe enviar `user_id` en las peticiones).
 
 ## Requisitos previos
 
@@ -25,7 +20,7 @@ El middleware `app/Http/Middleware/CheckAuthToken.php` valida el Bearer token ll
 1. Clona o sitúa el código en tu máquina.
 2. Copia el archivo de entorno y edítalo:
 
-	 En PowerShell:
+	 En PowerShell: https://github.com/saoricoder/MicroservicioPos_ExmPractico_1P.git
 
 ```powershell
 Copy-Item .env.example .env
@@ -65,6 +60,7 @@ php artisan key:generate
 6. Ejecuta migraciones:
 
 ```powershell
+php artisan migrate
 ```
 
 Si necesitas volver a crear la base de datos en limpio durante desarrollo:
@@ -99,18 +95,57 @@ Importa la colección en Postman y configura las variables de colección/entorno
 
 - `baseUrl` — por defecto `http://localhost:8000`
 - `token` — pega un Bearer token válido que devuelva el microservicio de Auth
-- `postId` — usar para operaciones que requieren ID
 
-Ejemplo: crear un post — En Postman, `POST {{baseUrl}}/api/posts` con body JSON:
 
-```json
-{
-	"title": "Mi título",
-	"content": "Contenido de ejemplo"
-}
-```
 
-No enviar `user_id` en el body.
+## Uso / Flujo de la API (Postman Collection)
+
+La colección de Postman (`postman/Posts Microservice Flow.postman_collection.json`) incluye el flujo completo de interacción, abarcando tanto la autenticación externa como el CRUD de posts.
+
+### 1. Autenticación (Servicio Externo)
+Estas peticiones se dirigen al microservicio de Auth (`{{auth_url}}`).
+
+- **Login**
+  - `POST /api/login`
+  - **Body:** `{ "email": "...", "password": "..." }`
+  - *Respuesta:* Devuelve el token Bearer y el ID del usuario necesarios para las siguientes peticiones.
+
+### 2. Gestión de Posts (Este Microservicio)
+Estas rutas se dirigen al microservicio de Posts (`{{posts_url}}`). Todas requieren el encabezado `Authorization: Bearer <TOKEN>`.
+
+- **Crear Post**
+  - `POST /api/posts`
+  - **Body:** `{ "title": "...", "content": "..." }`
+  - *Nota:* El `user_id` se asigna automáticamente basado en el token del usuario autenticado.
+
+- **Listar Posts**
+  - `GET /api/posts`
+  - Devuelve la lista de todas las publicaciones.
+
+- **Obtener Post por ID**
+  - `GET /api/posts/{id}`
+  - Devuelve el detalle de un post específico.
+
+- **Actualizar Post**
+  - `PUT /api/posts/{id}`
+  - **Body:** `{ "title": "...", "content": "..." }`
+  - *Restricción:* Solo el usuario creador del post puede editarlo.
+
+- **Eliminar Post**
+  - `DELETE /api/posts/{id}`
+  - *Restricción:* Solo el usuario creador del post puede eliminarlo.
+
+### 3. Verificación (Servicio Externo)
+- **Validar Token**
+  - `GET /api/validate-token`
+  - Ruta utilizada internamente por el middleware para confirmar la validez del token.
+
+
+
+---
+
+
+
 
 ## Consideraciones y notas
 
@@ -120,25 +155,4 @@ No enviar `user_id` en el body.
 - El middleware inyecta `auth_user` y `user_id` en la request; el `PostController` utiliza ese `user_id` para crear/validar propiedad.
 - Recomendado: configurar `AUTH_SERVICE_URL` en `.env` y, en entornos de producción, usar HTTPS y tiempo de conexión/reintentos adecuados.
 
-## Tests
 
-No hay tests integrados específicos para el flujo de autenticación en este repositorio. Recomendación:
-
-- Añadir tests que fingen (`Http::fake()`) las respuestas del auth service para validar el middleware.
-
-## Problemas conocidos
-
-- El microservicio depende de un servicio de autenticación externo para validar tokens. Para desarrollo puedes crear un mock simple que devuelva `{ "user": { "id": 1 } }` ante cualquier token.
-
-## Soporte / Siguientes pasos sugeridos
-
-- Añadir logging y métricas para trazabilidad
-- Agregar tests automatizados para middleware y controladores
-- Mejorar tolerancia: `Http::retry()` y cache de validación (si el auth lo permite)
-
----
-
-Si quieres, puedo:
-- Añadir un mock de Auth dentro de este repositorio para pruebas locales, o
-- Crear tests automatizados que fingen el servicio de Auth.
-Indica cuál prefieres y lo preparo.
