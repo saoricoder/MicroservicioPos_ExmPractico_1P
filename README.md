@@ -1,158 +1,151 @@
-# 2. Microservicio de Post (PRY_POST_MICROSERVICIO)
-Estudiantes : 
-* Betty Rodriguez
-* Victor Villamarin
+# 2\. Microservicio de Post (PRY\_POST\_MICROSERVICIO)
 
-Microservicio de Posts (Laravel) — gestión CRUD de publicaciones protegida por validación de tokens proporcionada por un microservicio de autenticación externo.
+> **Microservicio de Posts (Laravel)** — Gestión CRUD de publicaciones protegida por validación de tokens proporcionada por un microservicio de autenticación externo.
 
+### 🎓 Estudiantes
 
+  * **Betty Rodriguez**
+  * **Victor Villamarin**
 
-## Requisitos previos
+-----
 
-- PHP 8.x compatible con Laravel 12
-- Composer
-- PostgreSQL
-- Extensiones PHP típicas para Laravel (pdo_pgsql, mbstring, openssl, etc.)
-- (Opcional) Postman para probar la API
+## 🛠️ Requisitos Previos
 
-## Configuración rápida
+Asegúrate de tener instalado lo siguiente antes de comenzar:
 
-1. Clona o sitúa el código en tu máquina.
-2. Copia el archivo de entorno y edítalo:
+  - **PHP 8.x** (Compatible con Laravel 12)
+  - **Composer**
+  - **PostgreSQL**
+  - **Extensiones PHP:** `pdo_pgsql`.
+  - **Postman**  para pruebas de API.
 
-	 En PowerShell: https://github.com/saoricoder/MicroservicioPos_ExmPractico_1P.git
+-----
+
+## 🚀 Configuración Rápida
+
+Sigue estos pasos en orden para levantar el proyecto:
+
+### 1\. Clonar el Repositorio
+
+Sitúate en tu carpeta de proyectos y ejecuta:
+
+```bash
+git clone https://github.com/saoricoder/MicroservicioPos_ExmPractico_1P.git
+cd MicroservicioPos_ExmPractico_1P
+```
+
+### 2\. Configurar el Entorno (.env)
+
+Copia el archivo de ejemplo. En **PowerShell**:
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-3. Ajusta estas variables en ` .env ` (ejemplo):
+Edita el archivo `.env` y ajusta las siguientes variables clave (Base de datos y URL del servicio de Auth):
 
-```
+```ini
 APP_NAME=PRY_POST_MICROSERVICIO
 APP_ENV=local
 APP_KEY=
 APP_URL=http://localhost:8000
 
+# Configuración de Base de Datos
 DB_CONNECTION=pgsql
 DB_HOST=127.0.0.1
 DB_PORT=5432
-DB_DATABASE=tu_db
+DB_DATABASE=db_post
 DB_USERNAME=tu_usuario
 DB_PASSWORD=tu_password
 
-# URL base del microservicio de autenticación (usada por el middleware)
+# URL del Microservicio de Autenticación (Externo)
 AUTH_SERVICE_URL=http://localhost:8001
 ```
 
-4. Instala dependencias PHP:
+### 3\. Instalar Dependencias y Generar Key
+
+Ejecuta los siguientes comandos para instalar las librerías de Laravel y generar la llave de encriptación:
 
 ```powershell
 composer install
-```
-
-5. Genera la key de la aplicación:
-
-```powershell
 php artisan key:generate
 ```
 
-6. Ejecuta migraciones:
+### 4\. Base de Datos
+
+Ejecuta las migraciones para crear las tablas necesarias:
 
 ```powershell
 php artisan migrate
 ```
 
-Si necesitas volver a crear la base de datos en limpio durante desarrollo:
+> **Nota:** Si necesitas reiniciar la base de datos con datos de prueba (seeders), usa:
+>
+> ```powershell
+> php artisan migrate:fresh --seed
+> ```
 
-```powershell
-php artisan migrate:fresh --seed
-```
+### 5\. Levantar el Servidor
 
-7. Levanta el servidor de desarrollo:
+Inicia el servidor local en el puerto 8000:
 
 ```powershell
 php artisan serve --port=8000
 ```
 
-## Uso / Rutas principales
+-----
 
-Las rutas del microservicio están en `routes/api.php` y requieren autorización mediante el middleware `auth.micro` (alias para `CheckAuthToken`):
+## 🔌 Uso y Flujo de la API
 
-- GET `/api/posts` — Listar posts
-- POST `/api/posts` — Crear post (body JSON: `title`, `content`) — `user_id` se asigna desde el token
-- GET `/api/posts/{post}` — Ver post por ID
-- PUT `/api/posts/{post}` — Actualizar post (body JSON: `title`, `content`) — solo el propietario
-- DELETE `/api/posts/{post}` — Eliminar post — solo el propietario
+El sistema depende de un flujo de autenticación externo. A continuación se describe el ciclo de vida de las peticiones.
 
-Todas las peticiones deben llevar cabecera `Authorization: Bearer <TOKEN>`.
+### 1️⃣ Autenticación (Servicio Externo)
 
-## Postman
+*Estas peticiones van dirigidas al microservicio de Auth (ej. puerto 8001).*
 
-He incluido una colección para Postman en la carpeta `postman`: `postman/PRY_POST_MICROSERVICIO.postman_collection.json`.
+| Método | Endpoint | Descripción |
+| :--- | :--- | :--- |
+| `POST` | `/api/login` | **Body:** `{ "email": "...", "password": "..." }`<br>Devuelve el `token` necesario. |
 
-Importa la colección en Postman y configura las variables de colección/entorno:
+### 2️⃣ Gestión de Posts (Este Microservicio)
 
-- `baseUrl` — por defecto `http://localhost:8000`
-- `token` — pega un Bearer token válido que devuelva el microservicio de Auth
+*Todas las peticiones requieren Header:* `Authorization: Bearer <TOKEN>`
 
+| Método | Endpoint | Descripción | Restricciones |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/posts` | Listar todos los posts | - |
+| `POST` | `/api/posts` | Crear un nuevo post | `user_id` se asigna desde el token |
+| `GET` | `/api/posts/{id}` | Ver detalle de un post | - |
+| `PUT` | `/api/posts/{id}` | Actualizar un post | Solo el propietario |
+| `DELETE` | `/api/posts/{id}` | Eliminar un post | Solo el propietario |
 
+*(Body para POST/PUT: `{ "title": "...", "content": "..." }`)*
 
-## Uso / Flujo de la API (Postman Collection)
+### 3️⃣ Verificación (Interna)
 
-La colección de Postman (`postman/Posts Microservice Flow.postman_collection.json`) incluye el flujo completo de interacción, abarcando tanto la autenticación externa como el CRUD de posts.
+| Método | Endpoint | Descripción |
+| :--- | :--- | :--- |
+| `GET` | `/api/validate-token` | Usada internamente por el middleware para validar el token contra el servicio de Auth. |
 
-### 1. Autenticación (Servicio Externo)
-Estas peticiones se dirigen al microservicio de Auth (`{{auth_url}}`).
+-----
 
-- **Login**
-  - `POST /api/login`
-  - **Body:** `{ "email": "...", "password": "..." }`
-  - *Respuesta:* Devuelve el token Bearer y el ID del usuario necesarios para las siguientes peticiones.
+## 🧪 Postman
 
-### 2. Gestión de Posts (Este Microservicio)
-Estas rutas se dirigen al microservicio de Posts (`{{posts_url}}`). Todas requieren el encabezado `Authorization: Bearer <TOKEN>`.
+Se incluye una colección lista para usar en la carpeta del proyecto:
+📂 `postman/PRY_POST_MICROSERVICIO.postman_collection.json`
 
-- **Crear Post**
-  - `POST /api/posts`
-  - **Body:** `{ "title": "...", "content": "..." }`
-  - *Nota:* El `user_id` se asigna automáticamente basado en el token del usuario autenticado.
+**Configuración en Postman:**
 
-- **Listar Posts**
-  - `GET /api/posts`
-  - Devuelve la lista de todas las publicaciones.
+1.  Importa la colección.
+2.  Configura las variables de entorno/colección:
+      - `baseUrl`: `http://localhost:8000`
+      - `auth_url`: `http://localhost:8001` (Donde corra tu servicio de auth)
+      - `token`: Pega aquí el token obtenido del login.
 
-- **Obtener Post por ID**
-  - `GET /api/posts/{id}`
-  - Devuelve el detalle de un post específico.
+-----
 
-- **Actualizar Post**
-  - `PUT /api/posts/{id}`
-  - **Body:** `{ "title": "...", "content": "..." }`
-  - *Restricción:* Solo el usuario creador del post puede editarlo.
+## ⚠️ Consideraciones Importantes
 
-- **Eliminar Post**
-  - `DELETE /api/posts/{id}`
-  - *Restricción:* Solo el usuario creador del post puede eliminarlo.
-
-### 3. Verificación (Servicio Externo)
-- **Validar Token**
-  - `GET /api/validate-token`
-  - Ruta utilizada internamente por el middleware para confirmar la validez del token.
-
-
-
----
-
-
-
-
-## Consideraciones y notas
-
-- El microservicio de Autenticación NO está en este repositorio; debe estar corriendo en la URL configurada en `AUTH_SERVICE_URL`. Si no está disponible, el middleware devolverá `503 Authentication service unavailable`.
-- El middleware valida el token mediante `GET {AUTH_SERVICE_URL}/api/validate-token` y espera `{ "user": { "id": ... } }` como respuesta para un token válido.
-- He movido la URL del auth a `config/services.php` y el middleware emplea `config('services.auth.url')`.
-- El middleware inyecta `auth_user` y `user_id` en la request; el `PostController` utiliza ese `user_id` para crear/validar propiedad.
-- Recomendado: configurar `AUTH_SERVICE_URL` en `.env` y, en entornos de producción, usar HTTPS y tiempo de conexión/reintentos adecuados.
-
-
+1.  **Dependencia Externa:** Este microservicio **NO** gestiona usuarios ni tokens. Depende de que `AUTH_SERVICE_URL` esté configurado y el servicio de autenticación esté corriendo.
+2.  **Middleware:** El middleware `CheckAuthToken` intercepta las peticiones, valida el token con el servicio externo e inyecta el `user_id` y `auth_user` en la request.
+3.  **Error 503:** Si el servicio de autenticación está apagado, la API responderá con `503 Authentication service unavailable`.
