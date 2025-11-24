@@ -1,0 +1,152 @@
+{
+  "info": {
+    "_postman_id": "b1d9a3d9-0000-4a5b-9f00-123456789abc",
+    "name": "Posts Microservice Flow",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1 - Login (Auth)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": "{{auth_url}}/api/login"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Login OK', function () { pm.response.to.have.status(201); });",
+              "var json = pm.response.json();",
+              "if (json && json.token) { pm.environment.set('token', json.token); }",
+              "if (json && json.user && json.user.id) { pm.environment.set('auth_user_id', json.user.id); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2 - Create Post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Mi primer post desde Postman\",\n  \"content\": \"Contenido de prueba generado por la colección.\"\n}"
+        },
+        "url": "{{posts_url}}/api/posts"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Create post - status 201', function () { pm.response.to.have.status(201); });",
+              "var json = pm.response.json();",
+              "if (json && json.id) { pm.environment.set('post_id', json.id); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3 - List Posts",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{posts_url}}/api/posts"
+      }
+    },
+    {
+      "name": "4 - Get Post by ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{posts_url}}/api/posts/{{post_id}}"
+      }
+    },
+    {
+      "name": "5 - Update Post",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Mi post actualizado desde Postman\",\n  \"content\": \"Contenido actualizado de prueba.\"\n}"
+        },
+        "url": "{{posts_url}}/api/posts/{{post_id}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Update post - status 200', function () { pm.response.to.have.status(200); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6 - Delete Post",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{posts_url}}/api/posts/{{post_id}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Delete post - status 204 or 200', function () { pm.expect([204,200]).to.include(pm.response.code); });"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
